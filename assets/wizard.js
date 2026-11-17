@@ -114,24 +114,38 @@
 	}
 
 	function paintReview(data) {
-		var json = document.getElementById('rh-bb-json');
-		var list = document.getElementById('rh-bb-messages');
-		var download = document.getElementById('rh-bb-download');
-		if (json) {
-			json.textContent = data.json || '';
-		}
-		if (list) {
-			list.textContent = '';
-			(data.messages || []).forEach(function (message) {
-				var item = document.createElement('li');
-				item.className = 'is-' + (message.type || 'info');
-				item.textContent = message.message || '';
-				list.appendChild(item);
-			});
-		}
-		if (download) {
-			download.disabled = !!data.blocked;
-		}
+		['v1', 'v2'].forEach(function (format) {
+			var version = data[format] || {};
+			var json = document.getElementById('rh-bb-json-' + format);
+			var list = document.getElementById('rh-bb-messages-' + format);
+			var download = document.getElementById('rh-bb-download-' + format);
+			if (json) {
+				json.textContent = version.json || '';
+			}
+			if (list) {
+				list.textContent = '';
+				(version.messages || []).forEach(function (message) {
+					var item = document.createElement('li');
+					item.className = 'is-' + (message.type || 'info');
+					item.textContent = message.message || '';
+					list.appendChild(item);
+				});
+			}
+			if (download) {
+				download.disabled = !!version.blocked;
+			}
+		});
+	}
+
+	function showFormat(format) {
+		Array.prototype.forEach.call(form.querySelectorAll('.rh-bb-format'), function (tab) {
+			var active = tab.getAttribute('data-format') === format;
+			tab.classList.toggle('is-current', active);
+			tab.setAttribute('aria-selected', active ? 'true' : 'false');
+		});
+		Array.prototype.forEach.call(form.querySelectorAll('.rh-bb-format-panel'), function (panel) {
+			panel.hidden = panel.id !== 'rh-bb-format-' + format;
+		});
 	}
 
 	function bindToggle(input) {
@@ -406,12 +420,20 @@
 		}
 	});
 
-	var download = document.getElementById('rh-bb-download');
-	if (download) {
+	Array.prototype.forEach.call(form.querySelectorAll('.rh-bb-format'), function (tab) {
+		tab.addEventListener('click', function () {
+			showFormat(tab.getAttribute('data-format'));
+		});
+	});
+
+	Array.prototype.forEach.call(form.querySelectorAll('.rh-bb-download'), function (download) {
 		download.addEventListener('click', function (event) {
 			event.preventDefault();
+			var format = download.getAttribute('data-format') || 'v1';
 			refreshPreview().then(function (data) {
-				if (!data || data.blocked) {
+				var version = data && data[format];
+				if (!version || version.blocked) {
+					showFormat(format);
 					show('review', false);
 					return;
 				}
@@ -423,16 +445,17 @@
 					injected.setAttribute('data-rh-bb-action', '1');
 					form.appendChild(injected);
 				}
-				injected.value = 'rh_blueprint_builder_download_blueprint';
+				injected.value = download.value;
 				var previousAction = form.getAttribute('action');
 				form.setAttribute('action', config.adminPost);
 				HTMLFormElement.prototype.submit.call(form);
 				form.setAttribute('action', previousAction);
 			}).catch(function () {
+				showFormat(format);
 				show('review', false);
 			});
 		});
-	}
+	});
 
 	var wxr = document.getElementById('rh-bb-wxr');
 	if (wxr) {

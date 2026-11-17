@@ -62,6 +62,7 @@ class Admin {
 		add_action( 'network_admin_menu', array( $this, 'register_network_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
 		add_action( 'admin_post_rh_blueprint_builder_download_blueprint', array( $this, 'download_blueprint' ) );
+		add_action( 'admin_post_rh_blueprint_builder_download_blueprint_v2', array( $this, 'download_blueprint' ) );
 		add_action( 'admin_post_rh_blueprint_builder_download_wxr', array( $this, 'download_wxr' ) );
 		add_action( 'wp_ajax_rh_blueprint_builder_save_draft', array( $this, 'ajax_save' ) );
 		add_action( 'wp_ajax_rh_blueprint_builder_search_options', array( $this, 'ajax_search' ) );
@@ -665,21 +666,48 @@ class Admin {
 	private function render_review( $review, $draft, $step ) {
 		$placeholder = 'https://playground.wordpress.net/?blueprint-url=https://example.com/blueprint.json';
 		$test_url    = $this->blueprint->playground_test_url( isset( $draft['blueprint_url'] ) ? (string) $draft['blueprint_url'] : '' );
+		$versions    = array(
+			'v1' => array(
+				'label'   => __( 'Blueprint v1', 'rh-blueprint-builder' ),
+				'button'  => __( 'Download Blueprint v1', 'rh-blueprint-builder' ),
+				'action'  => 'rh_blueprint_builder_download_blueprint',
+				'notice'  => __( 'Commit this file as assets/blueprints/blueprint.json. Arrays and objects are applied in runPHP with maybe_unserialize(), not stored as serialized strings in setSiteOptions. Sample content is not cleared.', 'rh-blueprint-builder' ),
+			),
+			'v2' => array(
+				'label'   => __( 'Blueprint v2', 'rh-blueprint-builder' ),
+				'button'  => __( 'Download Blueprint v2', 'rh-blueprint-builder' ),
+				'action'  => 'rh_blueprint_builder_download_blueprint_v2',
+				'notice'  => __( 'WordPress.org Live Preview does not accept Blueprint v2 yet. Use this file with Playground and a public blueprint-url.', 'rh-blueprint-builder' ),
+			),
+		);
 		?>
 		<section id="rh-bb-panel-review" class="rh-bb-panel<?php echo 'review' === $step ? ' is-active' : ''; ?>" data-step="review" tabindex="-1" <?php echo 'review' === $step ? '' : 'hidden'; ?>>
 			<h2><?php esc_html_e( 'Review', 'rh-blueprint-builder' ); ?></h2>
-			<ul id="rh-bb-messages" class="rh-bb-messages">
-				<?php foreach ( $review['messages'] as $message ) : ?>
-					<li class="is-<?php echo esc_attr( $message['type'] ); ?>"><?php echo esc_html( $message['message'] ); ?></li>
+			<div class="rh-bb-format-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Blueprint format', 'rh-blueprint-builder' ); ?>">
+				<?php foreach ( $versions as $format => $version ) : ?>
+					<button type="button" class="rh-bb-format<?php echo 'v1' === $format ? ' is-current' : ''; ?>" role="tab" id="rh-bb-format-tab-<?php echo esc_attr( $format ); ?>" data-format="<?php echo esc_attr( $format ); ?>" aria-controls="rh-bb-format-<?php echo esc_attr( $format ); ?>" aria-selected="<?php echo 'v1' === $format ? 'true' : 'false'; ?>">
+						<?php echo esc_html( $version['label'] ); ?>
+					</button>
 				<?php endforeach; ?>
-			</ul>
-			<pre id="rh-bb-json" class="rh-bb-json"><?php echo esc_html( $review['json'] ); ?></pre>
-			<p class="rh-bb-warning"><?php esc_html_e( 'This file can contain site text and plugin settings, including license or API values you checked. Read it before you commit it to a public repository.', 'rh-blueprint-builder' ); ?></p>
-			<p>
-				<button type="submit" class="button button-primary" id="rh-bb-download" name="action" value="rh_blueprint_builder_download_blueprint" formaction="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" <?php disabled( ! empty( $review['blocked'] ) ); ?>>
-					<?php esc_html_e( 'Download blueprint', 'rh-blueprint-builder' ); ?>
-				</button>
-			</p>
+			</div>
+			<?php foreach ( $versions as $format => $version ) : ?>
+				<?php $payload = isset( $review[ $format ] ) ? $review[ $format ] : array(); ?>
+				<div id="rh-bb-format-<?php echo esc_attr( $format ); ?>" class="rh-bb-format-panel" role="tabpanel" aria-labelledby="rh-bb-format-tab-<?php echo esc_attr( $format ); ?>" <?php echo 'v1' === $format ? '' : 'hidden'; ?>>
+					<ul id="rh-bb-messages-<?php echo esc_attr( $format ); ?>" class="rh-bb-messages">
+						<?php foreach ( isset( $payload['messages'] ) ? $payload['messages'] : array() as $message ) : ?>
+							<li class="is-<?php echo esc_attr( $message['type'] ); ?>"><?php echo esc_html( $message['message'] ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+					<pre id="rh-bb-json-<?php echo esc_attr( $format ); ?>" class="rh-bb-json"><?php echo esc_html( isset( $payload['json'] ) ? $payload['json'] : '' ); ?></pre>
+					<p class="rh-bb-warning"><?php echo esc_html( $version['notice'] ); ?></p>
+					<p class="rh-bb-warning"><?php esc_html_e( 'This file can contain site text and plugin settings, including license or API values you checked. Read it before you commit it to a public repository.', 'rh-blueprint-builder' ); ?></p>
+					<p>
+						<button type="submit" class="button button-primary rh-bb-download" id="rh-bb-download-<?php echo esc_attr( $format ); ?>" name="action" value="<?php echo esc_attr( $version['action'] ); ?>" data-format="<?php echo esc_attr( $format ); ?>" formaction="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" <?php disabled( ! empty( $payload['blocked'] ) ); ?>>
+							<?php echo esc_html( $version['button'] ); ?>
+						</button>
+					</p>
+				</div>
+			<?php endforeach; ?>
 			<p><?php esc_html_e( 'To try the blueprint in Playground, host the downloaded JSON at a public HTTPS address, such as a GitHub raw URL. Playground cannot load localhost, and this plugin does not open a public URL on this site.', 'rh-blueprint-builder' ); ?></p>
 			<p>
 				<label for="rh-bb-blueprint-url"><?php esc_html_e( 'Public HTTPS URL of the blueprint file', 'rh-blueprint-builder' ); ?></label><br />
@@ -738,9 +766,16 @@ class Admin {
 		$review = $this->blueprint->review( $draft );
 		wp_send_json_success(
 			array(
-				'json'     => $review['json'],
-				'messages' => $review['messages'],
-				'blocked'  => $review['blocked'],
+				'v1' => array(
+					'json'     => $review['v1']['json'],
+					'messages' => $review['v1']['messages'],
+					'blocked'  => $review['v1']['blocked'],
+				),
+				'v2' => array(
+					'json'     => $review['v2']['json'],
+					'messages' => $review['v2']['messages'],
+					'blocked'  => $review['v2']['blocked'],
+				),
 			)
 		);
 	}
@@ -754,10 +789,15 @@ class Admin {
 		$this->assert_request();
 		$draft  = $this->save_posted_draft();
 		$review = $this->blueprint->review( $draft );
+		$action  = isset( $_REQUEST['action'] ) ? sanitize_key( wp_unslash( $_REQUEST['action'] ) ) : '';
+		$format  = 'rh_blueprint_builder_download_blueprint_v2' === $action ? 'v2' : 'v1';
+		$version = $review[ $format ];
 
-		if ( ! empty( $review['blocked'] ) || '' === $review['json'] ) {
-			$this->die_blocked( $review );
+		if ( ! empty( $version['blocked'] ) || '' === $version['json'] ) {
+			$this->die_blocked( $version );
 		}
+
+		$filename = 'v2' === $format ? 'blueprint-v2.json' : 'blueprint.json';
 
 		if ( ! headers_sent() ) {
 			while ( ob_get_level() > 0 ) {
@@ -765,11 +805,11 @@ class Admin {
 			}
 			nocache_headers();
 			header( 'Content-Type: application/json; charset=utf-8' );
-			header( 'Content-Disposition: attachment; filename="blueprint.json"' );
-			header( 'Content-Length: ' . strlen( $review['json'] ) );
+			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+			header( 'Content-Length: ' . strlen( $version['json'] ) );
 		}
 
-		echo $review['json'];
+		echo $version['json'];
 		exit;
 	}
 
