@@ -1,0 +1,12 @@
+{
+  "name": "rh-blueprint-builder",
+  "description": "Guided export of a WordPress site to a Playground Blueprint v2 file.",
+  "version": "1.0.0",
+  "license": "GPL-3.0-or-later",
+  "private": true,
+  "devDependencies": {
+    "grunt": "^1.4.1",
+    "grunt-cli": "^1.4.3",
+    "grunt-contrib-compress": "^2.0.0"
+  }
+}

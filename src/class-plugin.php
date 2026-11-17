@@ -7,6 +7,10 @@
 
 namespace RhBlueprintBuilder;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Loads translations and the admin wizard.
  */

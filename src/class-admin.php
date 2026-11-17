@@ -7,6 +7,10 @@
 
 namespace RhBlueprintBuilder;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Tools screen that collects a blueprint and serves the downloads.
  */
@@ -219,7 +223,7 @@ class Admin {
 				$this->render_plugins( $draft, $step );
 				$this->render_options( $draft, $step );
 				$this->render_content( $draft, $step );
-				$this->render_review( $review, $step );
+				$this->render_review( $review, $draft, $step );
 				?>
 
 				<p class="rh-bb-actions">
@@ -654,10 +658,13 @@ class Admin {
 	 * Review step.
 	 *
 	 * @param array<string, mixed> $review Review payload.
+	 * @param array<string, mixed> $draft  Saved answers.
 	 * @param string               $step   Current step.
 	 * @return void
 	 */
-	private function render_review( $review, $step ) {
+	private function render_review( $review, $draft, $step ) {
+		$placeholder = 'https://playground.wordpress.net/?blueprint-url=https://example.com/blueprint.json';
+		$test_url    = $this->blueprint->playground_test_url( isset( $draft['blueprint_url'] ) ? (string) $draft['blueprint_url'] : '' );
 		?>
 		<section id="rh-bb-panel-review" class="rh-bb-panel<?php echo 'review' === $step ? ' is-active' : ''; ?>" data-step="review" tabindex="-1" <?php echo 'review' === $step ? '' : 'hidden'; ?>>
 			<h2><?php esc_html_e( 'Review', 'rh-blueprint-builder' ); ?></h2>
@@ -672,6 +679,19 @@ class Admin {
 				<button type="submit" class="button button-primary" id="rh-bb-download" name="action" value="rh_blueprint_builder_download_blueprint" formaction="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" <?php disabled( ! empty( $review['blocked'] ) ); ?>>
 					<?php esc_html_e( 'Download blueprint', 'rh-blueprint-builder' ); ?>
 				</button>
+			</p>
+			<p><?php esc_html_e( 'To try the blueprint in Playground, host the downloaded JSON at a public HTTPS address, such as a GitHub raw URL. Playground cannot load localhost, and this plugin does not open a public URL on this site.', 'rh-blueprint-builder' ); ?></p>
+			<p>
+				<label for="rh-bb-blueprint-url"><?php esc_html_e( 'Public HTTPS URL of the blueprint file', 'rh-blueprint-builder' ); ?></label><br />
+				<input type="url" class="large-text" id="rh-bb-blueprint-url" name="rh_bb_blueprint_url" value="<?php echo esc_attr( $draft['blueprint_url'] ); ?>" placeholder="https://" />
+			</p>
+			<p><?php esc_html_e( 'Open the hosted file in Playground with this address:', 'rh-blueprint-builder' ); ?></p>
+			<p id="rh-bb-playground-test" class="rh-bb-playground-test" data-placeholder="<?php echo esc_attr( $placeholder ); ?>">
+				<?php if ( '' !== $test_url ) : ?>
+					<a href="<?php echo esc_url( $test_url ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $test_url ); ?></a>
+				<?php else : ?>
+					<code><?php echo esc_html( $placeholder ); ?></code>
+				<?php endif; ?>
 			</p>
 		</section>
 		<?php

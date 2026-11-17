@@ -7,6 +7,10 @@
 
 namespace RhBlueprintBuilder;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Turns wizard answers into Blueprint v2 JSON.
  */
@@ -620,6 +624,61 @@ class Blueprint {
 		}
 
 		return 1 === preg_match( '#^/[A-Za-z0-9_./~%-]*$#', $path );
+	}
+
+	/**
+	 * Playground address that loads a hosted blueprint file.
+	 *
+	 * An empty string means the hosted address is missing, not HTTPS, or local.
+	 * The address is for the review screen only and is not written into the JSON.
+	 *
+	 * @param string $blueprint_url Public HTTPS URL of blueprint.json.
+	 * @return string
+	 */
+	public function playground_test_url( $blueprint_url ) {
+		$blueprint_url = trim( (string) $blueprint_url );
+		if ( ! $this->is_public_blueprint_url( $blueprint_url ) ) {
+			return '';
+		}
+
+		return 'https://playground.wordpress.net/?blueprint-url=' . rawurlencode( $blueprint_url );
+	}
+
+	/**
+	 * Whether a blueprint file URL is an HTTPS address Playground can fetch.
+	 *
+	 * @param string $url Candidate URL.
+	 * @return bool
+	 */
+	private function is_public_blueprint_url( $url ) {
+		if ( ! $this->is_https_url( $url ) ) {
+			return false;
+		}
+
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		return '' !== $host && ! $this->is_local_host( $host );
+	}
+
+	/**
+	 * Whether a host is a local address Playground cannot load.
+	 *
+	 * @param string $host Hostname.
+	 * @return bool
+	 */
+	private function is_local_host( $host ) {
+		if ( in_array( $host, array( 'localhost', '127.0.0.1', '::1' ), true ) ) {
+			return true;
+		}
+
+		$suffixes = array( '.local', '.localhost' );
+		foreach ( $suffixes as $suffix ) {
+			$length = strlen( $suffix );
+			if ( strlen( $host ) >= $length && substr( $host, - $length ) === $suffix ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

@@ -39,6 +39,9 @@ build/Release
 
 # Dependency directories
 node_modules/
+
+# Grunt release archive
+rh-blueprint-builder.zip
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)

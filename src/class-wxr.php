@@ -7,6 +7,10 @@
 
 namespace RhBlueprintBuilder;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Buffers a WordPress export and removes author email addresses.
  */

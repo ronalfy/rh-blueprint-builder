@@ -7,6 +7,10 @@
 
 namespace RhBlueprintBuilder;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 /**
  * Reads the current site for the wizard and the blueprint.
  */
