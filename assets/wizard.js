@@ -181,6 +181,54 @@
 		});
 	}
 
+	var blueprintUrl = document.getElementById('rh-bb-blueprint-url');
+	if (blueprintUrl) {
+		blueprintUrl.addEventListener('input', paintPlaygroundTest);
+	}
+
+	function paintPlaygroundTest() {
+		var input = document.getElementById('rh-bb-blueprint-url');
+		var slot = document.getElementById('rh-bb-playground-test');
+		if (!input || !slot) {
+			return;
+		}
+		var hosted = input.value.trim();
+		var testUrl = playgroundTestUrl(hosted);
+		slot.textContent = '';
+		if (!testUrl) {
+			var sample = document.createElement('code');
+			sample.textContent = slot.getAttribute('data-placeholder') || '';
+			slot.appendChild(sample);
+			return;
+		}
+		var link = document.createElement('a');
+		link.href = testUrl;
+		link.target = '_blank';
+		link.rel = 'noopener noreferrer';
+		link.textContent = testUrl;
+		slot.appendChild(link);
+	}
+
+	function playgroundTestUrl(url) {
+		if (!/^https:\/\//i.test(url)) {
+			return '';
+		}
+		var parsed;
+		try {
+			parsed = new URL(url);
+		} catch (error) {
+			return '';
+		}
+		if (parsed.protocol !== 'https:' || !parsed.hostname) {
+			return '';
+		}
+		var host = parsed.hostname.toLowerCase();
+		if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host.slice(-6) === '.local' || host.slice(-10) === '.localhost') {
+			return '';
+		}
+		return 'https://playground.wordpress.net/?blueprint-url=' + encodeURIComponent(url);
+	}
+
 	var searchButton = document.getElementById('rh-bb-option-search-button');
 	var searchInput = document.getElementById('rh-bb-option-search');
 	var searchResults = document.getElementById('rh-bb-search-results');

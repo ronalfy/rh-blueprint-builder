@@ -895,6 +895,7 @@ class Admin {
 			'content'             => false,
 			'include_nonpublic'   => false,
 			'wxr_url'             => '',
+			'blueprint_url'       => '',
 			'rewrite_urls'        => true,
 			'fetch_attachments'   => true,
 		);
@@ -926,6 +927,7 @@ class Admin {
 		$input['content']          = ! empty( $_POST['rh_bb_content'] );
 		$input['include_nonpublic'] = ! empty( $_POST['rh_bb_include_nonpublic'] );
 		$input['wxr_url']          = isset( $_POST['rh_bb_wxr_url'] ) ? wp_unslash( $_POST['rh_bb_wxr_url'] ) : '';
+		$input['blueprint_url']    = isset( $_POST['rh_bb_blueprint_url'] ) ? wp_unslash( $_POST['rh_bb_blueprint_url'] ) : '';
 		$input['rewrite_urls']     = ! empty( $_POST['rh_bb_rewrite_urls'] );
 		$input['fetch_attachments'] = ! empty( $_POST['rh_bb_fetch_attachments'] );
 
@@ -1009,6 +1011,7 @@ class Admin {
 			'content'            => ! empty( $input['content'] ),
 			'include_nonpublic'  => ! empty( $input['include_nonpublic'] ),
 			'wxr_url'            => esc_url_raw( isset( $input['wxr_url'] ) ? (string) $input['wxr_url'] : '' ),
+			'blueprint_url'      => esc_url_raw( isset( $input['blueprint_url'] ) ? (string) $input['blueprint_url'] : '' ),
 			'rewrite_urls'       => ! empty( $input['rewrite_urls'] ),
 			'fetch_attachments'  => ! empty( $input['fetch_attachments'] ),
 		);
